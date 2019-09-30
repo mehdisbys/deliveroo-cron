@@ -19,9 +19,14 @@ The approach is as follows :
 
 #### How to run it 
 
-Install `golang-ci` if not installed.
+Dependencies :
+
+- Install `golang-ci` if not installed.
+- go 1.12 or above
 
 After cloning the repo do :
+
+`export GO111MODULE=on` //enables go modules
 
 `go mod download`
 
