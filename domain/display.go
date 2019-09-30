@@ -27,7 +27,7 @@ func (c CommandLineDisplay) Display() {
 		fmt.Printf("%-14s", v.name)
 
 		// print elements in slice
-		for _,n := range v.Values {
+		for _, n := range v.Values {
 			fmt.Printf("%d ", n)
 		}
 		fmt.Println()

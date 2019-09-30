@@ -11,7 +11,6 @@ func TestInput(t *testing.T) {
 	tests := []struct {
 		name        string
 		commandLine string
-
 	}{
 		{
 			commandLine: "application-commands file-name -arguments */15 0 1,15 * 1-5 /usr/bin/find",

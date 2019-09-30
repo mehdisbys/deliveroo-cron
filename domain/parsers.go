@@ -17,7 +17,7 @@ func parseRange(input string) ([]int, error) {
 	rangeVals := strings.Split(input, "-")
 
 	if len(rangeVals) != 2 {
-		return nil, errors.New(fmt.Sprintf("was expecting two elements in range but got %d", len(rangeVals)))
+		return nil, fmt.Errorf("was expecting two elements in range but got %d", len(rangeVals))
 	}
 
 	left, err := strconv.Atoi(rangeVals[0])
@@ -53,7 +53,7 @@ func parseList(input string) ([]int, error) {
 	rangeVals := strings.Split(input, ",")
 
 	if len(rangeVals) < 2 {
-		return nil, errors.New(fmt.Sprintf("was expecting at least two elements in list but got %d", len(rangeVals)))
+		return nil, fmt.Errorf("was expecting at least two elements in list but got %d", len(rangeVals))
 	}
 
 	res := []int{}
@@ -80,7 +80,7 @@ func parseFrequency(input string) ([]int, error) {
 	rangeVals := strings.Split(input, "/")
 
 	if len(rangeVals) != 2 {
-		return nil, errors.New(fmt.Sprintf("was expecting two elements in list but got %d", len(rangeVals)))
+		return nil, fmt.Errorf("was expecting two elements in list but got %d", len(rangeVals))
 	}
 
 	left := strings.Split(rangeVals[0], "-")

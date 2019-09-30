@@ -1,8 +1,9 @@
 package domain
 
 import (
-	"github.com/go-test/deep"
 	"testing"
+
+	"github.com/go-test/deep"
 )
 
 func TestParseExpression(t *testing.T) {
@@ -15,11 +16,11 @@ func TestParseExpression(t *testing.T) {
 			expression: []string{"0-59/15", "0", "1,15", "*", "1-5"},
 			expected: &ParsedExpression{
 				Fields: []Field{
-					Field{name: "minutes", Values: []int{0, 15, 30, 45},},
-					Field{name: "hour", Values: []int{0},},
-					Field{name: "day of month", Values: []int{1, 15},},
-					Field{name: "month", Values: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},},
-					Field{name: "day of week", Values: []int{1, 2, 3, 4, 5},},
+					Field{name: "minutes", Values: []int{0, 15, 30, 45}},
+					Field{name: "hour", Values: []int{0}},
+					Field{name: "day of month", Values: []int{1, 15}},
+					Field{name: "month", Values: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}},
+					Field{name: "day of week", Values: []int{1, 2, 3, 4, 5}},
 				},
 			},
 		},

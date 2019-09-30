@@ -25,19 +25,19 @@ const (
 
 var format = []Field{
 	{
-		name:     "minutes",
+		name: "minutes",
 	},
 	{
-		name:     "hour",
+		name: "hour",
 	},
 	{
-		name:     "day of month",
+		name: "day of month",
 	},
 	{
-		name:     "month",
+		name: "month",
 	},
 	{
-		name:     "day of week",
+		name: "day of week",
 	},
 }
 
@@ -71,9 +71,8 @@ const (
 )
 
 type Field struct {
-	position int
-	name     string
-	Values   []int
+	name   string
+	Values []int
 }
 
 type ParsedExpression struct {
@@ -88,7 +87,7 @@ func newParsedExpression(elements [][]int) *ParsedExpression {
 	fields := make([]Field, len(format))
 	copy(fields, format)
 
-	for i,e := range elements {
+	for i, e := range elements {
 		fields[i].Values = e
 	}
 
@@ -98,21 +97,31 @@ func newParsedExpression(elements [][]int) *ParsedExpression {
 func ParseExpression(elements []string) (*ParsedExpression, error) {
 
 	if len(elements) != CronElementsSize {
-		return nil, errors.New(
-			fmt.Sprintf("malformed expression expecting %d elements but got %d",
-				CronElementsSize,
-				len(elements)))
+		return nil, fmt.Errorf("malformed expression expecting %d elements but got %d",
+			CronElementsSize,
+			len(elements))
 	}
 
 	res := make([][]int, len(elements))
-	var err error
 
 	for i, e := range elements {
 		// parse each element and save result
-		res[i], err = parse(e, i)
+		val, err := parse(e, i)
 		if err != nil {
 			return nil, err
 		}
+
+		if val[0] < ranges[i][0] {
+			return nil,
+				fmt.Errorf("input %v : %d is inferior to allowed range %v", e, val[len(val)-1], ranges[i])
+		}
+
+		if val[len(val)-1] > ranges[i][1] {
+			return nil,
+				fmt.Errorf("input %v : %d is superior to allowed range %v", e, val[len(val)-1], ranges[i])
+		}
+
+		res[i] = val
 	}
 	return newParsedExpression(res), nil
 }

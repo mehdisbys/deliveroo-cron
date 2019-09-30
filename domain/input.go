@@ -13,9 +13,7 @@ type CommandLineInput struct {
 	Parser           CronParser
 	programName      string
 	programToExecute string
-	cronExpression   string
 }
-
 
 func (c *CommandLineInput) GetProgramToExec() string {
 	return c.programToExecute
