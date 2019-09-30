@@ -16,18 +16,19 @@ type CommandLineInput struct {
 	cronExpression   string
 }
 
-const (
-	cronElementsSize = 5
-)
 
-func (c *CommandLineInput) GetDataFromCommandLine() (string, error) {
+func (c *CommandLineInput) GetProgramToExec() string {
+	return c.programToExecute
+}
+
+func (c *CommandLineInput) GetDataFromCommandLine() ([]string, error) {
 	return c.GetData(os.Args)
 }
 
-func (c *CommandLineInput) GetData(argsWithProg []string) (string, error) {
+func (c *CommandLineInput) GetData(argsWithProg []string) ([]string, error) {
 
-	if len(argsWithProg) < (cronElementsSize + 2) {
-		return "", errors.New("invalid command")
+	if len(argsWithProg) < (CronElementsSize + 2) {
+		return nil, errors.New("invalid input")
 	}
 
 	c.programName = argsWithProg[0]
@@ -37,13 +38,13 @@ func (c *CommandLineInput) GetData(argsWithProg []string) (string, error) {
 	c.programToExecute = argsWithProg[l-1]
 
 	cronArgs := make([]string, 0)
-	
-	start := l - 1 - cronElementsSize
+
+	start := l - 1 - CronElementsSize
 	end := l - 2
 
 	for i := start; i <= end; i++ {
 		cronArgs = append(cronArgs, argsWithProg[i])
 	}
 
-	return "", nil
+	return cronArgs, nil
 }

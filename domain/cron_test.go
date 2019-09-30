@@ -14,31 +14,37 @@ func TestParseExpression(t *testing.T) {
 		{
 			expression: []string{"0-59/15", "0", "1,15", "*", "1-5"},
 			expected: &ParsedExpression{
-				Minutes:    []int{0, 15, 30, 45},
-				Hour:       []int{0},
-				DayOfMonth: []int{1, 15},
-				Month:      []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
-				DayOfWeek:  []int{1, 2, 3, 4, 5},
+				Fields: []Field{
+					Field{name: "minutes", Values: []int{0, 15, 30, 45},},
+					Field{name: "hour", Values: []int{0},},
+					Field{name: "day of month", Values: []int{1, 15},},
+					Field{name: "month", Values: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},},
+					Field{name: "day of week", Values: []int{1, 2, 3, 4, 5},},
+				},
 			},
 		},
 		{
 			expression: []string{"0-59/15", "0", "1,15", "*", "*"},
 			expected: &ParsedExpression{
-				Minutes:    []int{0, 15, 30, 45},
-				Hour:       []int{0},
-				DayOfMonth: []int{1, 15},
-				Month:      []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
-				DayOfWeek:  []int{1, 2, 3, 4, 5, 6, 7},
+				Fields: []Field{
+					Field{name: "minutes", Values: []int{0, 15, 30, 45}},
+					Field{name: "hour", Values: []int{0}},
+					Field{name: "day of month", Values: []int{1, 15}},
+					Field{name: "month", Values: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}},
+					Field{name: "day of week", Values: []int{1, 2, 3, 4, 5, 6, 7}},
+				},
 			},
 		},
 		{
 			expression: []string{"*/15", "*/10", "1,13,15", "*", "*"},
 			expected: &ParsedExpression{
-				Minutes:    []int{0, 15, 30, 45},
-				Hour:       []int{0, 10, 20},
-				DayOfMonth: []int{1, 13, 15},
-				Month:      []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
-				DayOfWeek:  []int{1, 2, 3, 4, 5, 6, 7},
+				Fields: []Field{
+					Field{name: "minutes", Values: []int{0, 15, 30, 45}},
+					Field{name: "hour", Values: []int{0, 10, 20}},
+					Field{name: "day of month", Values: []int{1, 13, 15}},
+					Field{name: "month", Values: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}},
+					Field{name: "day of week", Values: []int{1, 2, 3, 4, 5, 6, 7}},
+				},
 			},
 		},
 	}
@@ -99,7 +105,7 @@ func TestParse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
-			res, _ := Parse(test.input, 0)
+			res, _ := parse(test.input, 0)
 
 			if diff := deep.Equal(test.expected, res); diff != nil {
 				t.Error(diff)

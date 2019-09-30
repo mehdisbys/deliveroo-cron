@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -25,12 +23,22 @@ const (
 	List
 )
 
-type ParsedExpression struct {
-	Minutes    []int
-	Hour       []int
-	DayOfMonth []int
-	Month      []int
-	DayOfWeek  []int
+var format = []Field{
+	{
+		name:     "minutes",
+	},
+	{
+		name:     "hour",
+	},
+	{
+		name:     "day of month",
+	},
+	{
+		name:     "month",
+	},
+	{
+		name:     "day of week",
+	},
 }
 
 var ranges = [][2]int{
@@ -52,47 +60,74 @@ var ranges = [][2]int{
 	},
 }
 
+var CronElementsSize = len(format)
+
+const (
+	FrequencyDelimiter = "/"
+	ListDelimiter      = ","
+	RangeDelimiter     = "-"
+	FixedDelimiter     = ""
+	Wildcard           = "*"
+)
+
+type Field struct {
+	position int
+	name     string
+	Values   []int
+}
+
+type ParsedExpression struct {
+	Fields []Field
+}
+
 type CronParser interface {
 	ParseExpression() (*ParsedExpression, error)
 }
 
-func NewParsedExpression(elements [][]int) *ParsedExpression {
-	return &ParsedExpression{
-		Minutes:    elements[0],
-		Hour:       elements[1],
-		DayOfMonth: elements[2],
-		Month:      elements[3],
-		DayOfWeek:  elements[4],
+func newParsedExpression(elements [][]int) *ParsedExpression {
+	fields := make([]Field, len(format))
+	copy(fields, format)
+
+	for i,e := range elements {
+		fields[i].Values = e
 	}
+
+	return &ParsedExpression{Fields: fields}
 }
 
 func ParseExpression(elements []string) (*ParsedExpression, error) {
 
-	if len(elements) != 5 {
-		return nil, errors.New(fmt.Sprintf("malformed expression expecting 5 elements but got %d", len(elements)))
+	if len(elements) != CronElementsSize {
+		return nil, errors.New(
+			fmt.Sprintf("malformed expression expecting %d elements but got %d",
+				CronElementsSize,
+				len(elements)))
 	}
 
 	res := make([][]int, len(elements))
 	var err error
 
 	for i, e := range elements {
-		res[i], err = Parse(e, i)
+		// parse each element and save result
+		res[i], err = parse(e, i)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	return NewParsedExpression(res), nil
+	return newParsedExpression(res), nil
 }
 
-func Parse(input string, position int) ([]int, error) {
+func parse(input string, position int) ([]int, error) {
+	// replace wildcard with values we can use
 	input = replaceWildcard(input, ranges[position])
 
+	// get type of input for differentiated parsing
 	inputType, err := getType(input)
 	if err != nil {
 		return nil, err
 	}
 
+	// each input type has a different parsing method
 	switch inputType {
 	case Fixed:
 		return parseFixed(input)
@@ -107,152 +142,49 @@ func Parse(input string, position int) ([]int, error) {
 	}
 }
 
+// replaceWildcard replaces the wildcard by its equivalent range
 func replaceWildcard(input string, replaceWith [2]int) string {
 	r := fmt.Sprintf("%d-%d", replaceWith[0], replaceWith[1])
-	res := strings.ReplaceAll(input, "*", r)
+	res := strings.ReplaceAll(input, Wildcard, r)
 	return res
 }
 
-func parseFixed(input string) ([]int, error) {
-	value, err := strconv.Atoi(input)
-	return []int{value}, err
-}
-
-func parseRange(input string) ([]int, error) {
-	rangeVals := strings.Split(input, "-")
-
-	if len(rangeVals) != 2 {
-		return nil, errors.New(fmt.Sprintf("was expecting two elements in range but got %d", len(rangeVals)))
-	}
-
-	left, err := strconv.Atoi(rangeVals[0])
-	if err != nil {
-		return nil, err
-	}
-
-	right, err := strconv.Atoi(rangeVals[1])
-	if err != nil {
-		return nil, err
-	}
-
-	if left < 0 {
-		return nil, errors.New("left value in range is negative")
-	}
-
-	if right < 0 {
-		return nil, errors.New("right value in range is negative")
-	}
-
-	if left > right {
-		return nil, errors.New("left value should be inferior or equal to right value")
-	}
-
-	res := []int{}
-	for i := left; i <= right; i++ {
-		res = append(res, i)
-	}
-	return res, nil
-}
-
-func parseList(input string) ([]int, error) {
-	rangeVals := strings.Split(input, ",")
-
-	if len(rangeVals) < 2 {
-		return nil, errors.New(fmt.Sprintf("was expecting at least two elements in list but got %d", len(rangeVals)))
-	}
-
-	res := []int{}
-
-	// convert each element in string to an int
-	for _, r := range rangeVals {
-		val, err := strconv.Atoi(r)
-		if err != nil {
-			return nil, err
-		}
-
-		if val < 0 {
-			return nil, errors.New("value in list is negative")
-		}
-
-		res = append(res, val)
-	}
-
-	sort.Ints(res)
-	return res, nil
-}
-
-func parseFrequency(input string) ([]int, error) {
-	rangeVals := strings.Split(input, "/")
-
-	if len(rangeVals) != 2 {
-		return nil, errors.New(fmt.Sprintf("was expecting two elements in list but got %d", len(rangeVals)))
-	}
-
-	left := strings.Split(rangeVals[0], "-")
-
-	leftRange := []int{}
-	var err error
-	var val int
-
-	switch len(left) {
-	case 1: // fixed value
-		val, err = strconv.Atoi(left[0])
-		leftRange = []int{val}
-	case 2: // range
-		leftRange, err = parseRange(rangeVals[0])
-	default: // error
-		return nil, errors.New("left side of expression is malformed")
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	right, err := strconv.Atoi(rangeVals[1])
-	if err != nil {
-		return nil, err
-	}
-
-	res := []int{leftRange[0]}
-	for i := leftRange[0] + right; i <= leftRange[len(leftRange)-1]; i += right {
-		res = append(res, i)
-	}
-	return res, nil
-}
-
+// getType returns the ElementType of input which will allow
+// to determine which function to call
 func getType(input string) (ElementType, error) {
 	var element string
 	nonAlpha := getNonAlphaNumerical(input)
 	lna := len(nonAlpha)
 
-	// if more than 1 non-alphanumerical character and contain slash
+	// if more than 1 non-alphanumerical character and contain '/'
 	// then it is type Frequency
 	if lna > 1 {
 		// the slash will always be at index 1
-		if nonAlpha[1] == "/" {
+		if nonAlpha[1] == FrequencyDelimiter {
 			return Frequency, nil
 		}
 	}
 
 	if lna >= 1 {
-		if nonAlpha[0] == "," {
+		if nonAlpha[0] == ListDelimiter {
 			return List, nil
 		}
 		element = nonAlpha[0]
 	}
 
 	switch element {
-	case "-":
+	case RangeDelimiter:
 		return Range, nil
-	case ",":
+	case ListDelimiter:
 		return List, nil
-	case "":
+	case FixedDelimiter:
 		return Fixed, nil
 	default:
 		return InvalidType, errors.New("could not determine type")
 	}
 }
 
+// getNonAlphaNumerical returns all non-alphanumerical chars in input
 func getNonAlphaNumerical(input string) []string {
 	nonAlphaNumerical := []string{}
 	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
